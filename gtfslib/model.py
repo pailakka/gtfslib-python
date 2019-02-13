@@ -23,7 +23,7 @@ from functools import total_ordering
 
 
 class FeedInfo(object):
-    
+
     def __init__(self, feed_id, **kwargs):
         self.feed_id = feed_id
         for key in kwargs:
@@ -34,7 +34,7 @@ class FeedInfo(object):
                 self.__class__.__name__, self.feed_id)
 
 class Agency(object):
-    
+
     def __init__(self, feed_id, agency_id, agency_name, agency_url, agency_timezone, **kwargs):
         self.feed_id = feed_id
         self.agency_id = agency_id
@@ -43,7 +43,7 @@ class Agency(object):
         self.agency_timezone = agency_timezone
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        
+
     def __repr__(self):
         return "<%s(id=%s/%s, %s)>" % (
                 self.__class__.__name__, self.feed_id, self.agency_id, _public_vars(self))
@@ -59,10 +59,10 @@ class Zone(object):
                 self.__class__.__name__, self.feed_id, self.zone_id)
 
 class Stop(object):
-    
+
     TYPE_STOP = 0
     TYPE_STATION = 1
-    
+
     WHEELCHAIR_UNKNOWN = 0
     WHEELCHAIR_YES = 1
     WHEELCHAIR_NO = 2
@@ -81,7 +81,7 @@ class Stop(object):
         self.wheelchair_boarding = wheelchair_boarding
         for key in kwargs:
             setattr(self, key, kwargs[key])
-            
+
     def lat(self):
         return self.stop_lat
 
@@ -106,10 +106,12 @@ class Transfer(object):
     TRANSFER_TIMED = 2
     TRANSFER_NONE = 3
 
-    def __init__(self, feed_id, from_stop_id, to_stop_id, transfer_type=TRANSFER_DEFAULT, min_transfer_time=None):
+    def __init__(self, feed_id, from_stop_id, to_stop_id, from_trip_id=None, to_trip_id=None, transfer_type=TRANSFER_DEFAULT, min_transfer_time=None):
         self.feed_id = feed_id
         self.from_stop_id = from_stop_id
         self.to_stop_id = to_stop_id
+        self.from_trip_id = from_trip_id
+        self.to_trip_id = to_trip_id
         self.transfer_type = transfer_type
         self.min_transfer_time = min_transfer_time
 
@@ -152,11 +154,11 @@ class Route(object):
                 self.__class__.__name__, self.feed_id, self.route_id, _public_vars(self))
 
 class Calendar(object):
-    
+
     def __init__(self, feed_id, service_id):
         self.feed_id = feed_id
         self.service_id = service_id
-        
+
     def __repr__(self):
         return "<%s(id=%s/%s)>" % (
                 self.__class__.__name__, self.feed_id, self.service_id)
@@ -167,11 +169,11 @@ class CalendarDate(object):
     def __init__(self, date):
         self.feed_id = None
         self.date = date
-        
+
     @classmethod
     def ymd(cls, year, month, day):
         return cls(datetime.date(year, month, day))
-    
+
     @classmethod
     def fromYYYYMMDD(cls, yyyymmdd):
         return cls.ymd(int(yyyymmdd[:4]), int(yyyymmdd[4:6]), int(yyyymmdd[6:8]))
@@ -182,13 +184,13 @@ class CalendarDate(object):
         while cursor < end:
             yield cursor
             cursor = cursor.next_day()
-            
+
     def next_day(self, ndays=1):
         return CalendarDate(self.date + datetime.timedelta(days=ndays))
-    
+
     def dow(self):
         return self.date.weekday()
-    
+
     def _coerce(self, other):
         if isinstance(other, str):
             ymd = other.split("-")
@@ -198,7 +200,7 @@ class CalendarDate(object):
         if isinstance(other, CalendarDate):
             return other.date
         raise ValueError("Can't coerce %s to a CalendarDate (use either a CalendarDate, a 'yyyy-mm-dd' string or a datetime.date)" % other)
-    
+
     def as_date(self):
         # Note: add a getter if internal representation change some day
         return self.date
@@ -215,10 +217,10 @@ class CalendarDate(object):
 
     def __ne__(self, other):
         return self.date != self._coerce(other)
-    
+
     def __hash__(self):
         return self.date.year * 384 + self.date.month * 32 + self.date.day
-    
+
     def __repr__(self):
         if hasattr(self, 'feed_id') and self.feed_id is not None and hasattr(self, 'service_id') and self.service_id is not None:
             return "<%s(id=%s/%s %s)>" % (
@@ -229,19 +231,19 @@ class CalendarDate(object):
 
 class Trip(object):
 
-    # Same values as Stop, but duplicated as they may differ one day    
+    # Same values as Stop, but duplicated as they may differ one day
     WHEELCHAIR_UNKNOWN = 0
     WHEELCHAIR_YES = 1
     WHEELCHAIR_NO = 2
-    
+
     # Note: YES here really means "at least one"
     BIKES_UNKNOWN = 0
     BIKES_YES = 1
     BIKES_NO = 2
-    
+
     TIME_APPROX = 0
     TIME_EXACT = 1
-    
+
     def __init__(self, feed_id, trip_id, route_id, service_id,
                  wheelchair_accessible=WHEELCHAIR_UNKNOWN,
                  bikes_allowed=BIKES_UNKNOWN,
@@ -268,12 +270,12 @@ class Trip(object):
 
 @total_ordering
 class StopTime(object):
-    
+
     PICKUP_DROPOFF_REGULAR = 0
     PICKUP_DROPOFF_NONE = 1
     PICKUP_DROPOFF_PHONE = 2
     PICKUP_DROPOFF_ASKDRIVER = 3
-    
+
     TIMEPOINT_APPROX = 0
     TIMEPOINT_EXACT = 1
 
@@ -303,10 +305,10 @@ class StopTime(object):
         if not isinstance(other, StopTime):
             return False
         return _generic_eq(self._primary_keys(), other._primary_keys())
-        
+
     def __hash__(self):
         return _generic_hash(self._primary_keys())
-    
+
     def _primary_keys(self):
         return (self.feed_id, self.trip_id, self.stop_id, self.stop_sequence)
 

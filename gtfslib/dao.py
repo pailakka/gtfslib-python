@@ -56,22 +56,24 @@ class Dao(object):
         self._stoptime2 = aliased(StopTime, name="second_stop_time")
         self._transfer_fromstop = aliased(Stop, name="tr_from_stop")
         self._transfer_tostop = aliased(Stop, name="tr_to_stop")
+        self._transfer_fromtrip = aliased(Stop, name="tr_from_trip")
+        self._transfer_totrip = aliased(Stop, name="tr_to_trip")
 
     def session(self):
         return self._session
 
     def bulk_save_objects(self, objects):
         return self._session.bulk_save_objects(objects)
-        
+
     def add(self, obj):
         self._session.add(obj)
-        
+
     def add_all(self, objs):
         self._session.add_all(objs)
 
     def delete(self, obj):
         self._session.delete(obj)
-        
+
     def delete_feed(self, feed_id):
         self._session.query(FareRule).filter(FareRule.feed_id == feed_id).delete(synchronize_session=False)
         self._session.query(FareAttribute).filter(FareAttribute.feed_id == feed_id).delete(synchronize_session=False)
@@ -89,7 +91,7 @@ class Dao(object):
 
     def commit(self):
         self._session.commit()
-        
+
     def flush(self):
         self._session.flush()
 
@@ -104,7 +106,7 @@ class Dao(object):
         if prefetch_routes:
             query = query.options(subqueryload('routes'))
         return query.get((feed_id, agency_id))
-        
+
     def agencies(self, fltr=None, prefetch_routes=False):
         query = self._session.query(Agency).distinct()
         if fltr is not None:
@@ -135,7 +137,7 @@ class Dao(object):
         if prefetch_substops:
             query = query.options(subqueryload('sub_stops'))
         return query.get((feed_id, stop_id))
-    
+
     def stops(self, fltr=None, prefetch_parent=True, prefetch_substops=True, batch_size=1000):
         idquery = self._session.query(Stop.feed_id, Stop.stop_id).distinct()
         if fltr is not None:
@@ -168,15 +170,23 @@ class Dao(object):
 
     def transfer_from_stop(self):
         return self._transfer_fromstop
-    
+
     def transfer_to_stop(self):
         return self._transfer_tostop
+
+    def transfer_from_trip(self):
+        return self._transfer_fromtrip
+
+    def transfer_to_trip(self):
+        return self._transfer_totrip
 
     def transfers(self, fltr=None, prefetch_stops=True):
         query = self._session.query(Transfer).distinct()
         if fltr is not None:
             query = query.join(self._transfer_fromstop, 'from_stop')
             query = query.join(self._transfer_tostop, 'to_stop')
+            query = query.join(self._transfer_fromtrip, 'from_trip')
+            query = query.join(self._transfer_totrip, 'to_trip')
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
         if prefetch_stops:
@@ -194,7 +204,7 @@ class Dao(object):
         if prefetch_trips:
             query = query.options(subqueryload('trips'))
         return query.all()
-    
+
     def calendar(self, service_id, feed_id="", prefetch_dates=True, prefetch_trips=False, prefetch_stop_times=False):
         query = self._session.query(Calendar)
         if prefetch_stop_times:
@@ -207,7 +217,7 @@ class Dao(object):
         if prefetch_dates:
             query = query.options(subqueryload('dates'))
         return query.get((feed_id, service_id))
-    
+
     def calendars(self, fltr=None, prefetch_dates=True, prefetch_trips=False):
         query = self._session.query(Calendar).distinct()
         if fltr is not None:
@@ -218,7 +228,7 @@ class Dao(object):
         if prefetch_trips:
             query = query.options(subqueryload('trips'))
         return query.all()
-    
+
     def calendar_dates(self, fltr=None, prefetch_calendars=True, prefetch_trips=False):
         """Load calendar dates object. This may be not what you need, as it will return
            lots of duplicated dates (ie one date per calendar). If you only need distinct
@@ -250,7 +260,7 @@ class Dao(object):
         if prefetch_stop_times:
             query = query.options(subqueryload('stop_times'))
         return query.get((feed_id, trip_id))
-    
+
     def trips(self, fltr=None, prefetch_stop_times=True, prefetch_routes=False, prefetch_stops=False, prefetch_calendars=False, batch_size=800):
         idquery = self._session.query(Trip.feed_id, Trip.trip_id).distinct()
         if fltr is not None:

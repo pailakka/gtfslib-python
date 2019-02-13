@@ -291,25 +291,6 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
         n_stops += import_stop(stop, Stop.TYPE_STOP, zone_ids, stop_ids, station_ids)
     dao.flush()
     logger.info("Imported %d zones, %d stations and %d stops" % (len(zone_ids), n_stations, n_stops))
-
-    logger.info("Importing transfers...")
-    n_transfers = 0
-    for transfer in gtfs.transfers():
-        from_stop_id = transfer.get('from_stop_id')
-        to_stop_id = transfer.get('to_stop_id')
-        transfer['transfer_type'] = _toint(transfer.get('transfer_type'), 0)
-        for stop_id in (from_stop_id, to_stop_id):
-            if stop_id not in station_ids and stop_id not in stop_ids:
-                if lenient:
-                    logger.error("Stop ID '%s' in '%s' is invalid, skipping." % (stop_id, transfer))
-                    continue
-                else:
-                    raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
-        transfer2 = Transfer(feed_id, **transfer)
-        n_transfers += 1
-        dao.add(transfer2)
-    dao.flush()
-    logger.info("Imported %d transfers" % (n_transfers))
     
     logger.info("Importing routes...")
     n_routes = 0
@@ -458,7 +439,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
         
         trips_q.append(trip2)
         n_trips += 1
-        if n_trips % 10000 == 0:
+        if n_trips % 50000 == 0:
             dao.bulk_save_objects(trips_q)
             dao.flush()
             logger.info('%s trips' % n_trips)
@@ -469,6 +450,25 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
     dao.flush()
     
     logger.info("Imported %d trips" % n_trips)
+
+    logger.info("Importing transfers...")
+    n_transfers = 0
+    for transfer in gtfs.transfers():
+        from_stop_id = transfer.get('from_stop_id')
+        to_stop_id = transfer.get('to_stop_id')
+        transfer['transfer_type'] = _toint(transfer.get('transfer_type'), 0)
+        for stop_id in (from_stop_id, to_stop_id):
+            if stop_id not in station_ids and stop_id not in stop_ids:
+                if lenient:
+                    logger.error("Stop ID '%s' in '%s' is invalid, skipping." % (stop_id, transfer))
+                    continue
+                else:
+                    raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
+        transfer2 = Transfer(feed_id, **transfer)
+        n_transfers += 1
+        dao.add(transfer2)
+    dao.flush()
+    logger.info("Imported %d transfers" % (n_transfers))
 
     logger.info("Importing stop times...")
     n_stoptimes = 0
@@ -508,7 +508,7 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
         stoptimes_q.append(stoptime2)
         n_stoptimes += 1
         # Commit every now and then
-        if n_stoptimes % 50000 == 0:
+        if n_stoptimes % 500000 == 0:
             logger.info("%d stop times" % n_stoptimes)
             dao.bulk_save_objects(stoptimes_q)
             dao.flush()
