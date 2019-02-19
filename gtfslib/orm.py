@@ -250,13 +250,13 @@ class _Orm(object):
         self.mappers.append(mapper(Transfer, _transfer_mapper, properties={
             'feed' : relationship(FeedInfo, backref=backref('transfers', cascade="all,delete-orphan"),
                                   primaryjoin=_feedinfo_id_column == foreign(_transfer_feed_id_column)),
-            'from_stop' : relationship(Stop, backref=backref('from_transfers_stop', cascade='all', uselist=True), uselist=False,
+            'from_stop' : relationship(Stop, backref=backref('from_transfers', cascade='all', uselist=True), uselist=False,
                                        primaryjoin=(_transfer_from_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column)),
-            'to_stop' : relationship(Stop, backref=backref('to_transfers_stop', cascade='all', uselist=True), uselist=False,
+            'to_stop' : relationship(Stop, backref=backref('to_transfers', cascade='all', uselist=True), uselist=False,
                                      primaryjoin=(_transfer_to_stop_id_column == foreign(_stop_id_column)) & (_transfer_feed_id_column == _stop_feed_id_column)),
-            'from_trip' : relationship(Trip, backref=backref('from_transfers_trip', cascade='all', uselist=True), uselist=False,
+            'from_trip' : relationship(Trip, backref=backref('from_transfers', cascade='all', uselist=True), uselist=False,
                                        primaryjoin=(_transfer_from_trip_id_column == foreign(_trip_id_column)) & (_transfer_feed_id_column == _trip_feed_id_column)),
-            'to_trip' : relationship(Trip, backref=backref('to_transfers_trip', cascade='all', uselist=True), uselist=False,
+            'to_trip' : relationship(Trip, backref=backref('to_transfers', cascade='all', uselist=True), uselist=False,
                                      primaryjoin=(_transfer_to_trip_id_column == foreign(_trip_id_column)) & (_transfer_feed_id_column == _trip_feed_id_column))
         }))
 
