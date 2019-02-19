@@ -464,6 +464,19 @@ def _convert_gtfs_model(feed_id, gtfs, dao, lenient=False, disable_normalization
                     continue
                 else:
                     raise KeyError("Stop ID '%s' in '%s' is invalid." % (stop_id, transfer))
+
+        from_trip_id = transfer.get('from_trip_id')
+        to_trip_id = transfer.get('to_trip_id')
+
+        for trip_id in (from_trip_id, to_trip_id):
+            if trip_id:
+                if trip_id not in trip_ids:
+                    if lenient:
+                        logger.error("Trip ID '%s' in '%s' is invalid, skipping." % (trip_id, transfer))
+                        continue
+                    else:
+                        raise KeyError("Trip ID '%s' in '%s' is invalid." % (trip_id, transfer))
+
         transfer2 = Transfer(feed_id, **transfer)
         n_transfers += 1
         dao.add(transfer2)

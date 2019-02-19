@@ -56,8 +56,8 @@ class Dao(object):
         self._stoptime2 = aliased(StopTime, name="second_stop_time")
         self._transfer_fromstop = aliased(Stop, name="tr_from_stop")
         self._transfer_tostop = aliased(Stop, name="tr_to_stop")
-        self._transfer_fromtrip = aliased(Stop, name="tr_from_trip")
-        self._transfer_totrip = aliased(Stop, name="tr_to_trip")
+        self._transfer_fromtrip = aliased(Trip, name="tr_from_trip")
+        self._transfer_totrip = aliased(Trip, name="tr_to_trip")
 
     def session(self):
         return self._session
@@ -162,11 +162,11 @@ class Dao(object):
         """Return a filter filtering stops in the given bounds."""
         return (Stop.stop_lat >= min_lat) & (Stop.stop_lat <= max_lat) & (Stop.stop_lon >= min_lon) & (Stop.stop_lon <= max_lon)
 
-    def transfer(self, from_stop_id, to_stop_id, feed_id="", prefetch_stops=True):
+    def transfer(self, from_stop_id, to_stop_id, from_trip_id, to_trip_id, feed_id="", prefetch_stops=True):
         query = self._session.query(Transfer)
         if prefetch_stops:
-            query = query.options(subqueryload('from_stop'), subqueryload('to_stop'))
-        return query.get((feed_id, from_stop_id, to_stop_id))
+            query = query.options(subqueryload('from_stop'), subqueryload('to_stop'), subqueryload('from_trip'), subqueryload('to_trip'))
+        return query.get((feed_id, from_stop_id, to_stop_id, from_trip_id, to_trip_id))
 
     def transfer_from_stop(self):
         return self._transfer_fromstop
@@ -180,17 +180,18 @@ class Dao(object):
     def transfer_to_trip(self):
         return self._transfer_totrip
 
-    def transfers(self, fltr=None, prefetch_stops=True):
+    def transfers(self, fltr=None, prefetch=True):
         query = self._session.query(Transfer).distinct()
         if fltr is not None:
             query = query.join(self._transfer_fromstop, 'from_stop')
             query = query.join(self._transfer_tostop, 'to_stop')
-            query = query.join(self._transfer_fromtrip, 'from_trip')
-            query = query.join(self._transfer_totrip, 'to_trip')
+            query = query.join(self._transfer_fromtrip, 'from_trip', isouter=True)
+            query = query.join(self._transfer_totrip, 'to_trip', isouter=True)
             query = _AutoJoiner(self._orm, query, fltr).autojoin()
             query = query.filter(fltr)
-        if prefetch_stops:
+        if prefetch:
             query = query.options(subqueryload('from_stop'), subqueryload('to_stop'))
+        print('QUERY',query)
         return query.all()
 
     def route(self, route_id, feed_id=""):

@@ -242,9 +242,9 @@ class TestDao(unittest.TestCase):
             self.assertTrue(transfer.from_stop.stop_name == "Stop 1" or transfer.to_stop.stop_name == "Stop 1")
 
         s1 = dao.stop("S1", feed_id="F1")
-        self.assertTrue(len(s1.from_transfers) == 2)
-        self.assertTrue(len(s1.to_transfers) == 1)
-        for transfer in s1.from_transfers:
+        self.assertTrue(len(s1.from_transfers_stop) == 2)
+        self.assertTrue(len(s1.to_transfers_stop) == 1)
+        for transfer in s1.from_transfers_stop:
             if transfer.to_stop.stop_id == "S2":
                 self.assertTrue(transfer.transfer_type == Transfer.TRANSFER_DEFAULT)
             elif transfer.to_stop.stop_id == "S3":

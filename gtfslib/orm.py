@@ -224,13 +224,14 @@ class _Orm(object):
                                    primaryjoin=(_shape_id_column == foreign(_trip_shape_id_column)) & (_shape_feed_id_column == _trip_feed_id_column))
         }))
 
-
-        _transfer_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), primary_key=True)
-        _transfer_from_stop_id_column = Column('from_stop_id', String, primary_key=True)
-        _transfer_to_stop_id_column = Column('to_stop_id', String, primary_key=True)
-        _transfer_from_trip_id_column = Column('from_trip_id', String, primary_key=True)
-        _transfer_to_trip_id_column = Column('to_trip_id', String, primary_key=True)
+        _transfer_transfer_id_column = Column('transfer_id', Integer, primary_key=True, autoincrement=True)
+        _transfer_feed_id_column = Column('feed_id', String, ForeignKey('feed_info.feed_id'), nullable=False)
+        _transfer_from_stop_id_column = Column('from_stop_id', String, nullable=False)
+        _transfer_to_stop_id_column = Column('to_stop_id', String, nullable=False)
+        _transfer_from_trip_id_column = Column('from_trip_id', String, nullable=True)
+        _transfer_to_trip_id_column = Column('to_trip_id', String, nullable=True)
         _transfer_mapper = Table('transfers', self._metadata,
+                                 _transfer_transfer_id_column,
                                  _transfer_feed_id_column,
                                  _transfer_from_stop_id_column,
                                  _transfer_to_stop_id_column,
